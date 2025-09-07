@@ -4,16 +4,115 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interview Cheater</title>
-    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden; /* Prevent body scroll */
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            height: 100%;
+            max-height: 95vh;
+            border: 1px solid #333;
+            border-radius: 12px;
+            background-color: #1a1a1a;
+            display: flex;
+            flex-direction: column; /* Stack children vertically */
+            overflow: hidden;
+        }
+        .header {
+            text-align: center;
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            flex-shrink: 0; /* Prevent header from shrinking */
+        }
+        h1 {
+            margin: 0;
+            color: #1DB954;
+            font-size: 1.8em;
+        }
+        #conversation {
+            flex-grow: 1; /* Allow this area to fill available space */
+            overflow-y: auto; /* Enable vertical scrolling */
+            padding: 20px;
+        }
+        .controls-container {
+            padding: 15px;
+            text-align: center;
+            border-top: 1px solid #333;
+            flex-shrink: 0; /* Prevent controls from shrinking */
+        }
+        #start-btn {
+            background-color: #1DB954;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #start-btn:hover {
+            background-color: #1ED760;
+        }
+        .message {
+            margin-bottom: 15px;
+            max-width: 90%;
+        }
+        .message strong {
+            color: #1DB954;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .message .content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.6;
+        }
+        .message .content p {
+            margin-top: 0;
+            margin-bottom: 0.75em;
+        }
+        .message .content p:last-child {
+            margin-bottom: 0;
+        }
+        pre {
+            background-color: #101010;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border: 1px solid #282828;
+        }
+        code {
+            font-family: "Courier New", Courier, monospace;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h1>Interview Cheater</h1>
-        <p>Click the button and start speaking.</p>
-        <button id="start-btn">Listen</button>
+        <div class="header">
+            <h1>Interview Cheater</h1>
+        </div>
         <div id="conversation"></div>
+        <div class="controls-container">
+            <button id="start-btn">Listen</button>
+        </div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="script.js"></script>
