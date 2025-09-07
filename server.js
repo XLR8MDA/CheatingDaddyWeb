@@ -13,65 +13,68 @@ const groq = new Groq({
     apiKey: process.env.GROQ_API_KEY
 });
 
-// Configure Multer to save uploaded files to the system's temporary directory
+// Configure Multer
 const upload = multer({ dest: os.tmpdir() });
 
-// Serve static files from the 'public' directory
+// Serve static files
 app.use(express.static('public'));
 
 /**
- * Endpoint to handle audio transcription (Speech-to-Text).
+ * Endpoint for audio transcription
  */
 app.post('/stt', upload.single('audio'), async (req, res) => {
-    console.log('--- /stt endpoint hit ---');
-
     if (!req.file) {
         return res.status(400).json({ error: 'No audio file uploaded.' });
     }
 
-    // Robust Solution: Rename the temporary file to include a .webm extension
     const originalPath = req.file.path;
     const newPath = `${originalPath}.webm`;
 
     try {
         fs.renameSync(originalPath, newPath);
-        console.log(`File renamed to: ${newPath}`);
-
-        // Send the RENAMED file to Groq
         const transcription = await groq.audio.transcriptions.create({
             file: fs.createReadStream(newPath),
             model: 'whisper-large-v3',
         });
-
-        console.log('Transcription successful:', transcription.text);
         res.json({ text: transcription.text });
-
     } catch (error) {
         console.error('Groq STT Error:', error);
         res.status(500).json({ error: 'Failed to transcribe audio.' });
     } finally {
-        // Clean up the renamed file
         fs.unlink(newPath, (err) => {
-            if (err && err.code !== 'ENOENT') { // Ignore error if file doesn't exist
+            if (err && err.code !== 'ENOENT') {
                 console.error('Failed to delete temp file:', err);
-            } else {
-                console.log('Temporary file deleted successfully.');
             }
         });
     }
 });
 
 /**
- * Endpoint for chat completions, using route-specific JSON parsing.
+ * Endpoint for chat completions
  */
 app.post('/groq', express.json(), async (req, res) => {
-    const { history, prompt } = req.body;
+    // *** NEW LOGIC HERE ***
+    // 1. Receive the outputStyle from the client, defaulting to 'short'.
+    const { history, prompt, outputStyle = 'short' } = req.body;
 
     if (!prompt) {
         return res.status(400).json({ error: 'Prompt is required.' });
     }
+    
+    // 2. Define system prompts based on the desired output style.
+    let systemMessageContent;
+    if (outputStyle === 'short') {
+       systemMessageContent = "You are a 'TL;DR' bot specializing in interview responses. Your single most important goal is extreme brevity. Get directly to the point. Omit all conversational fluff, introductions, and summaries or examples. Use a maximum of 3 bullet points with description not more then one line each or a short paragraph.";
+    } else { // 'long'
+        systemMessageContent = "You are an AI Assistant. Your goal is to provide comprehensive, educational answers. Explain concepts thoroughly. When applicable, structure your response by providing a clear definition, followed by practical examples, and concluding with strategic advice for the interview. Use formatting like **bolding** for key terms to enhance clarity.";
+    }
 
+    // 3. Construct the messages array with the new system prompt.
     const messages = [
+        {
+            role: 'system',
+            content: systemMessageContent
+        },
         ...history.map(msg => ({ role: msg.role, content: msg.content })),
         { role: 'user', content: prompt }
     ];
@@ -93,7 +96,8 @@ app.post('/groq', express.json(), async (req, res) => {
             }
         }
         res.end();
-    } catch (error) {
+    } catch (error)
+    {
         console.error('Groq API Error:', error);
         if (!res.headersSent) {
             res.status(500).json({ error: 'Failed to get response from Groq API.' });
@@ -107,5 +111,3 @@ app.post('/groq', express.json(), async (req, res) => {
 app.listen(port, () => {
     console.log(`Server listening at http://localhost:${port}`);
 });
-
-module.exports = app;

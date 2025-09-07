@@ -1,5 +1,6 @@
 const startBtn = document.getElementById('start-btn');
 const conversation = document.getElementById('conversation');
+const outputToggle = document.getElementById('output-toggle');
 let conversationHistory = [];
 let mediaRecorder;
 let audioChunks = [];
@@ -85,9 +86,6 @@ function addMessage(role, content, isStreaming = false) {
         conversationHistory.push({ role, content, isStreaming });
     }
 
-    if (conversationHistory.length > 10) {
-        conversationHistory = conversationHistory.slice(-10);
-    }
     renderConversation();
 }
 
@@ -103,7 +101,6 @@ function setAssistantStreaming(isStreaming) {
 
 /**
  * Renders the entire conversation history to the screen.
- * New messages will now appear at the BOTTOM.
  */
 function renderConversation() {
     conversation.innerHTML = '';
@@ -124,9 +121,6 @@ function renderConversation() {
             contentEl.textContent = message.content;
         }
         messageEl.appendChild(contentEl);
-        
-        // *** THE FIX IS HERE ***
-        // Use appendChild() to add the new message to the bottom
         conversation.appendChild(messageEl);
     });
 
@@ -134,8 +128,6 @@ function renderConversation() {
         hljs.highlightElement(block);
     });
     
-    // *** AND HERE ***
-    // Automatically scroll to the bottom to show the newest message
     conversation.scrollTop = conversation.scrollHeight;
 }
 
@@ -145,11 +137,23 @@ function renderConversation() {
 async function getGroqResponse(prompt) {
     addMessage('assistant', '', true);
 
+    // *** NEW LOGIC HERE ***
+    // 1. Get the state of the toggle switch.
+    const isConcise = outputToggle.checked;
+    // 2. Get the last 5 messages for context.
+    const relevantHistory = conversationHistory.slice(0, -2);
+    const shortHistory = relevantHistory.slice(-6);
+
     try {
         const response = await fetch('/groq', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ history: conversationHistory.slice(0, -2), prompt })
+            // 3. Send the history, prompt, and new outputStyle to the server.
+            body: JSON.stringify({ 
+                history: shortHistory, 
+                prompt, 
+                outputStyle: isConcise ? 'short' : 'long' 
+            })
         });
 
         if (!response.ok) {
