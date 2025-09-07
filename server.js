@@ -18,36 +18,11 @@ const upload = multer({ dest: os.tmpdir() });
 app.use(express.static('public'));
 app.use(express.json());
 
-app.post('/stt', upload.single('audio'), async (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: 'No audio file uploaded.' });
-    }
-
-    const tempPath = req.file.path;
-    const newPath = path.join(os.tmpdir(), `${req.file.filename}.webm`);
-
-    try {
-        fs.renameSync(tempPath, newPath);
-
-        const transcription = await groq.audio.transcriptions.create({
-            file: fs.createReadStream(newPath),
-            model: 'whisper-large-v3-turbo',
-        });
-
-        res.json({ text: transcription.text });
-    } catch (error) {
-        console.error('Groq STT Error:', error);
-        res.status(500).json({ error: 'Failed to transcribe audio.' });
-    } finally {
-        // Clean up the temporary files
-        try {
-            await fs.promises.unlink(newPath);
-        } catch (error) {
-            if (error.code !== 'ENOENT') {
-                console.error('Failed to delete temporary file:', error);
-            }
-        }
-    }
+app.post('/stt', (req, res) => {
+    console.log('--- /stt endpoint hit ---');
+    console.log('Request headers:', req.headers);
+    console.log('Request body:', req.body);
+    res.status(200).json({ text: 'This is a test response from /stt' });
 });
 
 app.post('/groq', async (req, res) => {
@@ -78,9 +53,7 @@ app.post('/groq', async (req, res) => {
 
         for await (const chunk of stream) {
             if (chunk.choices[0].delta.content) {
-                res.write(`data: ${JSON.stringify(chunk.choices[0].delta)}
-
-`);
+                res.write(`data: ${JSON.stringify(chunk.choices[0].delta)}\n\n`);
             }
         }
 
